@@ -4,8 +4,11 @@ This repo contains MATLAB functions and scripts to run examples using the Linear
 
 The LAP method and examples in this repo are taken from the paper: 
 LAP: A LINEARIZE AND PROJECT METHOD FOR SOLVING INVERSE PROBLEMS WITH COUPLED VARIABLES
+
 This paper can be found online: arXiv:1705.09992
+
 For citation, use the following bibTex entry:
+
 @article{Herring2018,
 	title = {{LAP}: a Linearize and Project Method for Solving Inverse Problems with Coupled Variables},
 	author = {J.~L.~Herring and J.~G.~Nagy and L.~Ruthotto},
