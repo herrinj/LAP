@@ -1,6 +1,6 @@
 % =========================================================================
 %
-% function [Jc,para,dJ,J] = CoupledSRObjFctn(yc, d,omega, mf, mc, varargin)
+% function [Jc,para,dJ,J] = DecoupledSRObjFctn(yc, d,omega, mf, mc, varargin)
 %
 % Objective function for PIR super-resolution problem.
 %
@@ -17,28 +17,28 @@
 %  omega  - description of computational domain
 %     mf  - spatial discretization of high resolution image
 %     mc  - spatial discretization of coarse resolution image
+%   flag  - indicates which block of variable to return for the Jacobian
 %                       
 %
 % Output:
 %   Jc    - function value
 %   para  - parameter for plots
 %   dJ    - gradient
-%   J     - Jacobian structure to approximate Hessian
+%   J     - Jacobian structure to approximate Hessian, varies depending on flag
 %
 % see also
 % =========================================================================
-function [Jc,para,dJ,J] = CoupledSRObjFctn(yc, d, omega, mf, mc, varargin)
+function [Jc,para,dJ,J] = DecoupledSRObjFctn(yc, d, omega, mf, mc, flag, varargin)
 
 if nargin==0
     % Load data
     setup2DSuperResProb;   
-    
-   fctn = @(y) CoupledSRObjFctn(y, d, omega, mf, mc);
-   n = prod(mf) + prod(size(w0(:,2:end)));
-   yc = randn(n,1);
    
    % Test derivative
-   checkDerivative(fctn,yc);
+   fctn = @(y) DecoupledSRObjFctn(y, d, omega, mf, mc, 0);
+   n = prod(mf) + prod(size(w0(:,2:end)));
+   yc = randn(n,1);
+   checkDerivative(fctn,yc);  
    
    Jc   = [];
    para  = [];
@@ -111,21 +111,41 @@ para = struct('Jc',Jc,'Dc',Dc,'Sc',Sc,'omega',omega,'m',mf,'mc',mc,'Tc',xc,'Rc',
 
 if not(doDerivative), return; end
 
-% Jacobian w.r.t transformation w
-Jw = sqrt(prod(hc))*sparse(blkdiag(dx{:})*blkdiag(dy{:}));
-Jw = Jw(:,length(trafo('w0'))+1:end); % First frame fixed
-
-% Jacobian w.r.t. image and gradient
-if not(matrixFree)
-    Jx = sqrt(prod(hc))*A;
-    dJ = [res'*Jx + alpha*(Sx'*S), res'*Jw];
-else
-    Jx = @(x,flag) sqrt(prod(hc))*opA(x,Ai,flag);
-    dJ = [Jx(res,'transp')' + alpha*(Sx'*S), res'*Jw];
+if (flag == 0 || flag == 1)
+    % Jacobian w.r.t. image
+    if not(matrixFree)
+        Jx = sqrt(prod(hc))*A;
+        dJx = res'*Jx + alpha*(Sx'*S);
+    else
+        Jx = @(x,flag) sqrt(prod(hc))*opA(x,Ai,flag);
+        dJx = Jx(res,'transp')' + alpha*(Sx'*S);
+    end
 end
-        
-% Load everything into Jacobian structure
-J = struct('Jx', Jx, 'Jw', Jw, 'res', res, 'yc',yc, 'alpha', alpha, 'S', S, 'xdim', prod(mf), 'wdim', length(yc(prod(mf)+1:end)));
+
+if (flag == 0 || flag == 2)
+    % Jacobian w.r.t transformation w
+    Jw = sqrt(prod(hc))*sparse(blkdiag(dx{:})*blkdiag(dy{:}));
+    Jw = Jw(:,length(trafo('w0'))+1:end); % First frame fixed
+    dJw = res'*Jw;
+end
+
+if flag == 0
+    % Load everything into Jacobian structure
+    J = struct('Jx', Jx, 'Jw', Jw, 'res', res, 'yc',yc, 'alpha', alpha, 'S', S, 'xdim', prod(mf), 'wdim', length(yc(prod(mf)+1:end)));
+    dJ = [dJx, dJw];
+end
+
+if flag == 1
+    % Load everything into Jacobian structure
+    J = struct('Jx', Jx, 'res', res, 'yc',yc,'alpha', alpha, 'S', S, 'xdim', prod(mf), 'wdim', length(yc(prod(mf)+1:end)));
+    dJ = dJx;
+end
+
+if flag == 2
+    % Load everything into Jacobian structure
+    J = struct('Jw', Jw, 'res', res, 'yc',yc, 'xdim', prod(mf), 'wdim', length(yc(prod(mf)+1:end)));
+    dJ = dJw;
+end
 
 end
 

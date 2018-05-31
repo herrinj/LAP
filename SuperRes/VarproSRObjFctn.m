@@ -6,7 +6,7 @@
 %
 % VarPro (reduced) objective function for PIR super-resolution problem.
 %
-% J[W] = .5 sum_i^nv || A[y(w_i)]*x[w] - d_i  ||^2 + alpha ||L*x ||^2
+% J[W] = .5 sum_i^nv || A[y(w_i)]*x[w] - d_i  ||^2 + alpha ||S*x ||^2
 %
 % where A denotes an interpolation matrix, y(w_i) is a parametric
 % transformation, and x is a high resolution reconstruction based on
