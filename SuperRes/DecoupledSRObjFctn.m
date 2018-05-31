@@ -1,6 +1,6 @@
 % =========================================================================
 %
-% function [Jc,para,dJ,J] = DecoupledSRObjFctn(yc, d,omega, mf, mc, varargin)
+% function [Jc,para,dJ,J] = DecoupledSRObjFctn(yc, d,omega, mf, mc, flag, varargin)
 %
 % Objective function for PIR super-resolution problem.
 %

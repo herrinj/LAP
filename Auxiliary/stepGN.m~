@@ -180,6 +180,8 @@ switch solver
         wdim    = op.wdim;
         activex = active(1:xdim);
         activew = active(xdim+1:end);
+        Q       = speye(xdim);
+        Q       = Q(:,~activex);
         
         % Set up HyBR parameters
         options = IRhybrid_lsqr('defaults');
@@ -296,11 +298,12 @@ switch solver
         S       = S(:,not(activex));    % restrict regularizer
         Jx      = Jx(:,not(activex));
         rhs     = [-res; -sqrt(alpha)*(S*xc)];
-        reg_Jx  = [Jx; sqrt(alpha)*S];
+        reg_Jx  = [-res; -sqrt(alpha)*]
+        reg_Jx  = @(x,flag) reg_Jx_mf(x, Jx, alpha, S, Q, length(res), flag);
         dx      = zeros(xdim,1);
         
         % Solve for dx iteratively
-        [dx(not(activex)),~,~,iters] = lsqr(reg_Jx, rhs, solverTol, solverMaxIter);        
+        [dx(not(activex)),~,~,iters] = lsqr(reg_Jx, rhs, solverTol,solverMaxIter);        
         
         % Combine and return results
         dy = dx(:);    
@@ -343,47 +346,6 @@ switch solver
         % Output relevant info
         solveInfo.iters = iters;
      
-     case 'mbBCDlshybr'
-        %
-        %   Matrix-based, decoupled BCD least-squares solver for Gauss-Newton 
-        %   step on image variables using hybrid regularization 
-        %
-        
-        % Load things from Hessian structure
-        Jx      = op.Jx; % Jacobian w.r.t. x, expected as a function handle
-        res     = op.res; % current residual
-        yc      = op.yc; % current iterate
-        xdim    = op.xdim;
-        activex = active(1:xdim);
-      
-        
-  
-        % Set up HyBR parameters
-        options = IRhybrid_lsqr('defaults');
-        BegReg  = 1;
-        options = IRset(options, 'BegReg', BegReg,'IterBar','off');
-        options = IRset(options, 'LSQRtols',[solverTol solverTol]);
-        options = IRset(options, 'MaxIter', solverMaxIter);
-        options = IRset(options, 'Reorth','off');
-        
-        % Run HyBR to get regularized solution for dx
-        restr_Jx= Jx(:,~activex);
-        dx      = zeros(xdim,1);
-        [dx(not(activex)), IterInfo] = IRhybrid_lsqr(restr_Jx, -res, options, []);
-        alpha   = IterInfo.TikParam_final;
-        iters   = IterInfo.its;
-         
-        % Return results
-        dy = dx(:);    
-        
-        % Compute new gradient
-        dJ = res'*Jx + alpha*ones(1,xdim);      
-        
-        % Output relative info
-        solveInfo.alpha = alpha;
-        solveInfo.iters = iters;
-        solveInfo.dJ    = dJ;    
-        
      case 'mfBCDlshybr'
         %
         %   Matrix-free, decoupled BCD least-squares solver for Gauss-Newton 
