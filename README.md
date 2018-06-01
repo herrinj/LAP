@@ -17,7 +17,9 @@ This code implements the numerical techniques outlined in this paper:
 
 ## Dependencies 
 
-All codes rely heavily on the FAIR toolbox available here: https://github.com/C4IR/FAIR.m . This toolbox is required in the MATLAB filepath to run any of the examples in this repo. 
+All codes rely heavily on the FAIR toolbox available here: https://github.com/C4IR/FAIR.m. This toolbox is required in the MATLAB filepath to run any of the examples in this repo. 
+
+Codes using hybrid regularization with LAP or block coordinate descent require the IRtools toolbox in the MATLAB filepath, available here: https://github.com/jnagy1/IRtools.
 
 ## Acknowledgements 
 
