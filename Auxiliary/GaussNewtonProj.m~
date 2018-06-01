@@ -191,9 +191,7 @@ while 1
     if iterSave
         if iterVP
             iterArray(:,iter+1) = [para.Tc(:); yc];
-        else
             iterArray(:,iter+1) = yc;
-        end
     end
     para.normdY = norm(yc - yOld);
     Plots(iter,para);

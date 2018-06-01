@@ -85,7 +85,7 @@ upper_bound = Inf*ones(prod(size(w0(:,2:end))),1);
 lower_bound = -Inf*ones(prod(size(w0(:,2:end))),1);
 
 tic();
-[w_VPd, his_VPd] = GaussNewtonProj(VPd, reshape(w0(:,2:end),[],1),'upper_bound', upper_bound, 'lower_bound', lower_bound,'solver', [], 'maxIter', maxIter, 'iterSave', true);
+[w_VPd, his_VPd] = GaussNewtonProj(VPd, reshape(w0(:,2:end),[],1),'upper_bound', upper_bound, 'lower_bound', lower_bound,'solver', [], 'maxIter', maxIter, 'iterSave', true, 'iterVP', true);
 time_VPd = toc();
 
 % Extract x with a function call
@@ -106,7 +106,7 @@ upper_bound = Inf*ones(prod(size(w0(:,2:end))),1);
 lower_bound = -Inf*ones(prod(size(w0(:,2:end))),1);
 
 tic();
-[w_VPe, his_VPe] = GaussNewtonProj(VPe, reshape(w0(:,2:end),[],1),'upper_bound', upper_bound, 'lower_bound', lower_bound, 'solver', [], 'maxIter', maxIter, 'iterSave', true);
+[w_VPe, his_VPe] = GaussNewtonProj(VPe, reshape(w0(:,2:end),[],1),'upper_bound', upper_bound, 'lower_bound', lower_bound, 'solver', [], 'maxIter', maxIter, 'iterSave', true, 'iterVP', true);
 time_VPe = toc();
 
 % Extract x with a function call
@@ -186,3 +186,90 @@ fprintf('norm(w_BCDd - wtrue)/norm(w_true) = %1.4e in %1.2secs \n', norm(w_BCDd(
 
 fprintf('norm(x_BCDh - xtrue)/norm(x_true) = %1.4e in %1.2secs \n', norm(x_BCDh(:) - xtrue(:))/norm(xtrue(:)), time_BCDh);
 fprintf('norm(w_BCDh - wtrue)/norm(w_true) = %1.4e in %1.2secs \n', norm(w_BCDh(:) - wtrue(:))/norm(wtrue(:)), time_BCDh);
+
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+% Relative Error Plots %
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Extract iterates for both sets of variables
+x_iters_FULL = his_FULL.iters(1:prod(mf),:);
+x_iters_LAPd = his_LAPd.iters(1:prod(mf),:);
+x_iters_LAPh = his_LAPh.iters(1:prod(mf),:);
+x_iters_VPd  = his_VPd.iters(1:prod(mf),:);
+x_iters_VPe  = his_VPe.iters(1:prod(mf),:);
+x_iters_BCDd = his_BCDd.iters(1:prod(mf),:);
+x_iters_BCDh = his_BCDh.iters(1:prod(mf),:);
+
+w_iters_FULL = [zeros(3,size(his_FULL.array,1)); his_FULL.iters(prod(mf)+1:end,:)];
+w_iters_LAPd = [zeros(3,size(his_LAPd.array,1)); his_LAPd.iters(prod(mf)+1:end,:)];
+w_iters_LAPh = [zeros(3,size(his_LAPh.array,1)); his_LAPh.iters(prod(mf)+1:end,:)];
+w_iters_VPd  = [zeros(3,size(his_VPd.array,1)); his_VPd.iters(prod(mf)+1:end,:)];
+w_iters_VPe  = [zeros(3,size(his_VPe.array,1)); his_VPe.iters(prod(mf)+1:end,:)];
+w_iters_BCDd = [zeros(3,size(his_BCDd.iters,2)); his_BCDd.iters(prod(mf)+1:end,:)];
+w_iters_BCDh = [zeros(3,size(his_BCDh.iters,2)); his_BCDh.iters(prod(mf)+1:end,:)];
+
+% Make some matrices for easy evaluation
+norm_xtrue     = norm(xtrue(:));
+norm_wtrue     = norm(wtrue(:));
+
+x_re_FULL   = zeros(maxIter+1,1);
+x_re_LAPd   = zeros(maxIter+1,1);
+x_re_LAPh   = zeros(maxIter+1,1);
+x_re_VPd    = zeros(maxIter+1,1);
+x_re_VPe    = zeros(maxIter+1,1);
+x_re_BCDd   = zeros(maxIter+1,1);
+x_re_BCDh   = zeros(maxIter+1,1);
+
+w_re_FULL   = zeros(maxIter+1,1);
+w_re_LAPd   = zeros(maxIter+1,1);
+w_re_LAPh   = zeros(maxIter+1,1);
+w_re_VPd    = zeros(maxIter+1,1);
+w_re_VPe    = zeros(maxIter+1,1);
+w_re_BCDd   = zeros(maxIter+1,1);
+w_re_BCDh   = zeros(maxIter+1,1);
+
+% Compute the relative errors
+for k = 1:maxIter+1
+    x_re_FULL(k)   = norm(x_iters_FULL(:,k) - xtrue(:))/norm_xtrue;
+    x_re_LAPd(k)   = norm(x_iters_LAPd(:,k) - xtrue(:))/norm_xtrue;
+    x_re_LAPh(k)   = norm(x_iters_LAPh(:,k) - xtrue(:))/norm_xtrue;
+    x_re_VPd(k)    = norm(x_iters_VPd(:,k) - xtrue(:))/norm_xtrue;
+    x_re_VPe(k)    = norm(x_iters_VPe(:,k) - xtrue(:))/norm_xtrue;
+    x_re_BCDd(k)   = norm(x_iters_BCDd(:,k) - xtrue(:))/norm_xtrue;
+    x_re_BCDh(k)   = norm(x_iters_BCDh(:,k) - xtrue(:))/norm_xtrue;
+
+    w_re_FULL(k)   = norm(w_iters_FULL(:,k) - wtrue(:))/norm_wtrue;
+    w_re_LAPd(k)   = norm(w_iters_LAPd(:,k) - wtrue(:))/norm_wtrue;
+    w_re_LAPh(k)   = norm(w_iters_LAPh(:,k) - wtrue(:))/norm_wtrue;
+    w_re_VPd(k)    = norm(w_iters_VPd(:,k) - wtrue(:))/norm_wtrue;
+    w_re_VPe(k)    = norm(w_iters_VPe(:,k) - wtrue(:))/norm_wtrue;
+    w_re_BCDd(k)   = norm(w_iters_BCDd(:,k) - wtrue(:))/norm_wtrue;
+    w_re_BCDh(k)   = norm(w_iters_BCDh(:,k) - wtrue(:))/norm_wtrue;
+end
+
+xx = 0:20; xx = xx';
+
+% Plot the the relative errors
+figure();
+hold on;
+semilogy(xx, x_re_FULL,'-o');
+semilogy(xx, x_re_LAPd,'-d');
+semilogy(xx, x_re_LAPh,'-h');
+semilogy(xx, x_re_VPd, '-*');
+semilogy(xx, x_re_VPe,'-+');
+semilogy(xx, x_re_BCDd,'-s');
+semilogy(xx, x_re_BCDh,'-^');
+title('Rel. Err. Image');
+
+figure();
+hold on;
+semilogy(xx, w_re_FULL,'-o');
+semilogy(xx, w_re_LAPd,'-d');
+semilogy(xx, w_re_LAPh,'-h');
+semilogy(xx, w_re_VPd,'-*');
+semilogy(xx, w_re_VPe,'-+');
+semilogy(xx, w_re_BCDd,'-s');
+semilogy(xx, w_re_BCDh,'-^');
+title('Rel. Err. Motion');
+legend('FULL','LAPd','LAPh', 'VPd', 'VPe', 'BCDd', 'BCDh');

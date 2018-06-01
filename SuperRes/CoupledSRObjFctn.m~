@@ -66,11 +66,15 @@ wc = reshape([trafo('w0');yc(prod(mf)+1:end)],[],nVol); % First frame fixed
 % Build interpolation matrix, i.e. A = K*T(w) with K downsampling, T(w) motion
 grid    = getCellCenteredGrid(omega,mc);
 Ai      = cell(nVol,1);
+yi      = cell(nVol,1);
 dy      = cell(nVol,1);
-dx      = cell(nVol,1);
 for i=1:nVol
-    [yi, dy{i}] = trafo(wc(:,i),grid); % Transform points
-    Ai{i}       = getLinearInterMatrix(omega, mf, yi); % Interpolation matrices
+    [yi{i}, dy{i}] = trafo(wc(:,i),grid); % Transform points
+    if matrixFree
+        Ai{i}       = @(x) linearInter(reshape(x, mf), omega, yi{i}); % Interpolation matrices
+    else
+        Ai{i}       = getLinearInterMatrix(omega, mf, yi); % Interpolation matrices
+    end
     if doDerivative
         [~, dx{i}] = linearInter(reshape(xc,mf), omega, yi); % Derivatives of interpolation
     end

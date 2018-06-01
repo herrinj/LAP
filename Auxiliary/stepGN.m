@@ -183,11 +183,11 @@ switch solver
         
         % Set up HyBR parameters
         options = IRhybrid_lsqr('defaults');
-        BegReg  = 1;
-        options = IRset(options, 'BegReg', BegReg,'IterBar','off');
-        options = IRset(options, 'LSQRtols',[solverTol solverTol]);
-        options = IRset(options, 'MaxIter', solverMaxIter);
-        options = IRset(options, 'Reorth','off');
+        options = IRset(options,'IterBar','off');
+        options = IRset(options,'resflatTol',solverTol);
+        options = IRset(options,'MaxIter', solverMaxIter);
+        options = IRset(options,'Reorth','off');
+        options = IRset(options,'verbosity','off');
        
         % Set up system
         Jx      = Jx(:,not(activex));   % restrict Jx to inactive set
@@ -201,7 +201,7 @@ switch solver
         
         % Run HyBR to get regularized solution for dx
         [dx(not(activex)), IterInfo] = IRhybrid_lsqr(proj_Jx, proj_rhs, options, []);
-        alpha   = IterInfo.TikParam_final;
+        alpha   = IterInfo.RegP(end);
         iters   = IterInfo.its;
         
         % Retrieve dw, put together results into dy, and compute the gradient dJ
@@ -238,12 +238,13 @@ switch solver
         
         % Set up HyBR parameters
         options = IRhybrid_lsqr('defaults');
-        BegReg  = 1;
-        options = IRset(options, 'BegReg', BegReg,'IterBar','off');
-        options = IRset(options, 'LSQRtols',[solverTol solverTol]);
-        options = IRset(options, 'MaxIter', solverMaxIter);
-        options = IRset(options, 'Reorth','off');
-       
+        options = IRset(options,'IterBar','off');
+        options = IRset(options,'resflatTol',solverTol);
+        options = IRset(options,'MaxIter', solverMaxIter);
+        options = IRset(options,'Reorth','off');
+        options = IRset(options,'verbosity','off');
+
+        
         % Set up system
         Jw      = Jw(:,not(activew));   % restrict Jw to inactive set
         L       = chol(Jw'*Jw,'lower');  % store Cholesky factors for speed 
@@ -255,7 +256,7 @@ switch solver
         
         % Run HyBR to get regularized solution for dx
         [dx(not(activex)), IterInfo] = IRhybrid_lsqr(proj_Jx, proj_rhs, options, []);
-        alpha   = IterInfo.TikParam_final;
+        alpha   = IterInfo.RegP(end);
         iters   = IterInfo.its;
         
         % Retrieve dw, put together results into dy, and compute the gradient dJ
@@ -360,17 +361,17 @@ switch solver
   
         % Set up HyBR parameters
         options = IRhybrid_lsqr('defaults');
-        BegReg  = 1;
-        options = IRset(options, 'BegReg', BegReg,'IterBar','off');
-        options = IRset(options, 'LSQRtols',[solverTol solverTol]);
-        options = IRset(options, 'MaxIter', solverMaxIter);
-        options = IRset(options, 'Reorth','off');
+        options = IRset(options,'IterBar','off');
+        options = IRset(options,'resflatTol',solverTol);
+        options = IRset(options,'MaxIter', solverMaxIter);
+        options = IRset(options,'Reorth','off');
+        options = IRset(options,'verbosity','off');
         
         % Run HyBR to get regularized solution for dx
         restr_Jx= Jx(:,~activex);
         dx      = zeros(xdim,1);
         [dx(not(activex)), IterInfo] = IRhybrid_lsqr(restr_Jx, -res, options, []);
-        alpha   = IterInfo.TikParam_final;
+        alpha   = IterInfo.RegP(end);
         iters   = IterInfo.its;
          
         % Return results
@@ -402,19 +403,19 @@ switch solver
   
         % Set up HyBR parameters
         options = IRhybrid_lsqr('defaults');
-        BegReg  = 1;
-        options = IRset(options, 'BegReg', BegReg,'IterBar','off');
-        options = IRset(options, 'LSQRtols',[solverTol solverTol]);
-        options = IRset(options, 'MaxIter', solverMaxIter);
-        options = IRset(options, 'Reorth','off');
+        options = IRset(options,'IterBar','off');
+        options = IRset(options,'resflatTol',solverTol);
+        options = IRset(options,'MaxIter', solverMaxIter);
+        options = IRset(options,'Reorth','off');
+        options = IRset(options,'verbosity','off');
         
         % Run HyBR to get regularized solution for dx
         restr_Jx      = @(x,flag) reg_Jx_mf(x, Jx, 0.0, [], Q, length(res), flag);
         dx      = zeros(xdim,1);
         [dx(not(activex)), IterInfo] = IRhybrid_lsqr(restr_Jx, -res, options, []);
-        alpha   = IterInfo.TikParam_final;
+        alpha   = IterInfo.RegP(end);
         iters   = IterInfo.its;
-         
+        
         % Return results
         dy = dx(:);    
         
