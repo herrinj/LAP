@@ -1,8 +1,9 @@
 % =========================================================================
-% (c) Lars Ruthotto 2015/12/03
-% http://www.mathcs.emory.edu/~lruthot/
+% 
+%   (c) James Herring 2018/07/05
+%   http://www.math.uh.edu/~herring/
 %
-% sets up 2D test data for super resolution experiments
+%   Sets up 2D test data for super resolution examples
 %
 % =========================================================================
 

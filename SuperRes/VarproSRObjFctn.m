@@ -21,7 +21,7 @@
 %
 % Output:
 %   Jc    - function value
-%   para  - parameter for plots
+%   para  - parameters for plots
 %   dJ    - gradient
 %   H     - GaussNewton style approximation to Hessian (either explicit or as operator)
 %
@@ -59,7 +59,7 @@ if nargin==0
         fprintf('%1.4e \t %1.4e \t\t %1.4e \t\t %1.4e \n', h(j),T0(j),T1(j),T2(j));
     end
 
-    figure();
+   figure();
    loglog(h,T0); hold on;
    loglog(h,T1); 
    loglog(h,T2); 
@@ -143,7 +143,7 @@ end
 res     = sqrt(prod(hc))*(Rc - d(:));
 Dc      = 0.5*(res'*res);
 Sx      = S*xc(:);
-Sc      = 0.5*alpha*(Sx)'*(Sx);
+Sc      = 0.5*alpha*(Sx'*Sx);
 Jc      = Dc + Sc;
 
 % Parameters for outside visualization

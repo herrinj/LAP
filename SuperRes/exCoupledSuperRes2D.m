@@ -1,7 +1,12 @@
+%==========================================================================
+%   
+%   (c) James Herring 2018/07/05
+%   http://www.math.uh.edu/~herring/
 %
-%   This script sets up and runs the coupled super-resolution problem using
-%   various objective functions
+%   Sets up and runs the coupled super-resolution problem using various 
+%   objective functions
 %
+%==========================================================================
 
 %%
 %%%%%%%%%%%%%%%%%%%%%

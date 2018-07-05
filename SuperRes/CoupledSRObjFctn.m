@@ -2,7 +2,7 @@
 %
 % function [Jc,para,dJ,J] = CoupledSRObjFctn(yc, d,omega, mf, mc, varargin)
 %
-% Objective function for PIR super-resolution problem.
+% Fully coupled objective function for PIR super-resolution problem.
 %
 % J[T,W] = .5 sum_i^nv || A[y(w_i)]*x - d_i  ||^2 + alpha ||S*x ||^2
 %

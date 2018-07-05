@@ -68,8 +68,8 @@ solver       = [];
 solverMaxIter= 50;              
 solverTol    = 1e-1;
 
-% Bound constraints
-upper_bound  = Inf*ones(numel(y0),1);
+% Bound constraints (do not work with complex variables)
+upper_bound  = Inf*ones(numel(y0),1);   
 lower_bound  = -Inf*ones(numel(y0),1);
 
 % Line search parameters
