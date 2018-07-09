@@ -37,7 +37,7 @@ solverMaxIter= 50*ones(numBlocks,1);
 solverTol    = 1e-1*ones(numBlocks,1);
 
 % Bound constraints
-upper_bound  = Inf*ones(numel(y0),1);
+upper_bound  = Inf*ones(numel(y0),1); % only accepts bounds on real variables 
 lower_bound  = -Inf*ones(numel(y0),1);
 
 % Line search parameters

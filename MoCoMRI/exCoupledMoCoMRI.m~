@@ -6,6 +6,8 @@
 %   Sets up and runs the coupled super-resolution problem using various 
 %   objective functions
 %
+%   Word of warning: This whole code takes a long while to run
+%
 %==========================================================================
 
 %%
@@ -16,24 +18,27 @@
 setupMoCoMRIProb;
 
 % Set up params for all solvers
+tolJ = 1e-4;
+tolY = 1e0;
+tolG = 1e-1;
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Run LAP with direct regularization %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-LAPd = @(y) CoupledMRIObjFctn(y, d, A, C, omega, m, 'alpha', alpha);
+LAPd        = @(y) CoupledMRIObjFctn(y, d, A, C, omega, m, 'alpha', alpha);
 
 % Set some method parameters
-maxIter     = 3;
+maxIter     = 20;
 iterSave    = true;
 solver      = 'mfLAPlsdir';
 
 tic();
 [y_LAPd, his_LAPd] = GaussNewtonProj(LAPd,[x0(:); reshape(w0(:,2:end),[],1)],'solver', solver, 'solverTol',1e-2, 'maxIter', maxIter);
-time_LAPd = toc();
+time_LAPd   = toc();
 
-x_LAPd = y_LAPd(1:prod(m));
-w_LAPd = [zeros(3,1), reshape(y_LAPd(prod(m)+1:end),3,[])];
+x_LAPd      = y_LAPd(1:prod(m));
+w_LAPd      = [zeros(3,1), reshape(y_LAPd(prod(m)+1:end),3,[])];
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -42,16 +47,15 @@ w_LAPd = [zeros(3,1), reshape(y_LAPd(prod(m)+1:end),3,[])];
 LAPh = @(y) CoupledMRIObjFctn(y, d, A, C, omega, m, 'alpha', 0, 'regularizer', 'hybr');
 
 % Set some method parameters
-maxIter     = 3;
+maxIter     = 20;
 iterSave    = true;
-solver = 'mfLAPlsHyBR';
+solver      = 'mfLAPlsHyBR';
 
 tic();
 [y_LAPh, his_LAPh] = GaussNewtonProj(LAPh,[x0(:); reshape(w0(:,2:end),[],1)],'solver', solver, 'solverTol',1e-2, 'maxIter', maxIter);
-time_LAPh = toc();
-
-x_LAPh = y_LAPh(1:prod(m));
-w_LAPh = [zeros(3,1), reshape(y_LAPh(prod(m)+1:end),3,[])];
+time_LAPh   = toc();
+x_LAPh      = y_LAPh(1:prod(m));
+w_LAPh      = [zeros(3,1), reshape(y_LAPh(prod(m)+1:end),3,[])];
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -60,35 +64,77 @@ w_LAPh = [zeros(3,1), reshape(y_LAPh(prod(m)+1:end),3,[])];
 VPd = @(w) VarproMRIObjFctn(w, d, A, C, omega, m, 'alpha',0.01,'regularizer','grad');
 
 % Set some method parameters
-maxIter = 3;
+maxIter     = 20;
 iterSave    = true;
 
 tic();
 [w_VPd, his_VPd] = GaussNewtonProj(VPd, reshape(w0(:,2:end),[],1),'solver', [], 'maxIter', maxIter, 'iterSave', true, 'iterVP', true);
-time_VPd = toc();
+time_VPd    = toc();
 
 % Extract x with a function call
-[~,para] = VPd(w_VPd);
-x_VPd = para.Tc;
-w_VPd = [zeros(3,1), reshape(w_VPd,3,[])];
+[~,para]    = VPd(w_VPd);
+x_VPd       = para.Tc;
+w_VPd       = [zeros(3,1), reshape(w_VPd,3,[])];
 
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Run VarPro with discrete identity regularizer %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-VPe = @(w) VarproMRIObjFctn(w, d, omega, mf, mc, 'alpha', 0.01, 'regularizer', 'eye', 'matrixFree', 1);
+VPe         = @(w) VarproMRIObjFctn(w, d, A, C, omega, m, 'alpha',0.01,'regularizer','eye');
 
 % Set some method parameters
-maxIter = 20;
+maxIter     = 20;
 iterSave    = true;
-upper_bound = Inf*ones(prod(size(w0(:,2:end))),1);
-lower_bound = -Inf*ones(prod(size(w0(:,2:end))),1);
 
 tic();
-[w_VPe, his_VPe] = GaussNewtonProj(VPe, reshape(w0(:,2:end),[],1),'upper_bound', upper_bound, 'lower_bound', lower_bound, 'solver', [], 'maxIter', maxIter, 'iterSave', true, 'iterVP', true);
-time_VPe = toc();
+[w_VPe, his_VPe] = GaussNewtonProj(VPe, reshape(w0(:,2:end),[],1), 'solver', [], 'maxIter', maxIter, 'iterSave', true, 'iterVP', true);
+time_VPe    = toc();
 
 % Extract x with a function call
-[~,para] = VPe(w_VPe);
-x_VPe = para.Tc;
-w_VPe = [zeros(3,1), reshape(w_VPe,3,[])];
+[~,para]    = VPe(w_VPe);
+x_VPe       = para.Tc;
+w_VPe       = [zeros(3,1), reshape(w_VPe,3,[])];
+
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Run block coordinate descent with discrete gradient regularizer %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+BCDd = @(y, flag) DecoupledMRIObjFctn(y, d, A, C, omega, m, flag, 'alpha', 0.01, 'regularizer', 'grad');
+
+% Set some method parameters
+maxIter     = 20;
+iterSave    = true;
+upper_bound = [1*ones(size(x0(:))); Inf*ones(prod(size(w0(:,2:end))),1)];
+lower_bound = [0*ones(size(x0(:))); -Inf*ones(prod(size(w0(:,2:end))),1)];
+solver      = cell(2,1); solver{1} = 'mfBCDlsdir'; solver{2} = 'mbBCDchol';
+solverTol   = [1e-2; 1e-2];
+blocks      = [1 , length(x0(:))+1; length(x0(:)), length(x0(:))+numel(w0(:,2:end))];
+
+tic();
+[y_BCDd, his_BCDd] = CoordDescent(BCDd, [x0(:); reshape(w0(:,2:end),[],1)], blocks, 'upper_bound', upper_bound, 'lower_bound', lower_bound,...
+                                 'solver', solver, 'solverTol', solverTol, 'maxIter', maxIter, 'iterSave', true, 'tolJ',tolJ,'tolY',tolY,'tolG',tolG);
+time_BCDd   = toc();
+x_BCDd      = y_BCDd(1:prod(mf));
+w_BCDd      = [zeros(3,1), reshape(y_BCDd(prod(mf)+1:end),3,[])];
+
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Run block coordinate descent with hybrid regularizer %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+BCDh = @(y, flag) DecoupledSRObjFctn(y, d, omega, mf, mc, flag, 'regularizer', 'hybr', 'matrixFree', 1);
+
+% Set some method parameters
+maxIter     = 25;
+iterSave    = true;
+upper_bound = [1*ones(size(x0(:))); Inf*ones(prod(size(w0(:,2:end))),1)];
+lower_bound = [0*ones(size(x0(:))); -Inf*ones(prod(size(w0(:,2:end))),1)];
+solver      = cell(2,1); solver{1} = 'mfBCDlshybr'; solver{2} = 'mbBCDchol';
+solverTol   = [1e-2; 1]; 
+blocks      = [1 , length(x0(:))+1; length(x0(:)), length(x0(:))+numel(w0(:,2:end))];
+
+tic();
+[y_BCDh, his_BCDh] = CoordDescent(BCDh, [x0(:); reshape(w0(:,2:end),[],1)], blocks, 'upper_bound', upper_bound, 'lower_bound', lower_bound,...
+                                 'solver', solver, 'solverTol', solverTol, 'maxIter', maxIter, 'iterSave', true, 'tolJ',tolJ,'tolY',tolY,'tolG',tolG);
+time_BCDh   = toc();
+x_BCDh      = y_BCDh(1:prod(mf));
+w_BCDh      = [zeros(3,1), reshape(y_BCDh(prod(mf)+1:end),3,[])];

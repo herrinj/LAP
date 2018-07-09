@@ -84,12 +84,6 @@ iterVP       = 0;            % flag to save VarPro linear variables from para st
 stop         = zeros(5,1);   % vector for stopping criteria
 Plots        = @(iter,para) []; % for plots;
 
-% History output
-his          = [];
-hisArray     = zeros(maxIter+1,7);
-hisStr       = {'iter','J','Jold-J','|proj_dJ|','|dy|','LS','Active'};
-
-
 % Overwrite default parameters above using varargin
 for k=1:2:length(varargin)     
     eval([varargin{k},'=varargin{',int2str(k+1),'};']);
@@ -104,6 +98,11 @@ if (isempty(Jstop) || isempty(paraStop))
     [Jstop,paraStop] = fctn(yStop); Jstop = abs(Jstop) + (Jstop == 0); 
     Plots('stop',paraStop);
 end
+
+% History output
+his          = [];
+hisArray     = zeros(maxIter+1,7);
+hisStr       = {'iter','J','Jold-J','|proj_dJ|','|dy|','LS','Active'};
 
 yc = y0;
 active = (yc <= lower_bound)|(yc >= upper_bound);
@@ -151,7 +150,7 @@ while 1
     iter = iter+1;  
     
     % Gauss-Newton step on inactive set
-    [dy_in, solverInfo] = stepGN(op,-dJ,solver, 'active', active, 'solverMaxIter',solverMaxIter, 'solverTol', solverTol);
+    [dy_in, solverInfo] = stepGN(op,-dJ,solver, 'active', active, 'solverMaxIter', solverMaxIter, 'solverTol', solverTol);
     
     % Pull out updated gradient
     if isfield(solverInfo,'dJ')
@@ -173,9 +172,6 @@ while 1
     
     % Line search
     [yt, exitFlag, lsIter] = lineSearch(fctn, yc, dy, Jc, proj_dJ, lower_bound, upper_bound, lsMaxIter, lsReduction); 
-    if exitFlag==0
-        break;
-    end
     
     % Save old values and re-evaluate objective function
     yOld = yc; Jold = Jc; yc = yt;
@@ -195,6 +191,12 @@ while 1
             iterArray(:,iter+1) = yc;
         end
     end
+    
+    % Exit if line search failed
+    if exitFlag==0 
+        break;
+    end
+    
     para.normdY = norm(yc - yOld);
     Plots(iter,para);
 end
@@ -265,6 +267,7 @@ while 1
         break; 
     elseif cond(2)
         exitFlag = 0;
+        yt = yc; % No progress
         fprintf('Line search fail: maximum iterations = %d \n',lsMaxIter);
         break;
     end

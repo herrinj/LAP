@@ -1,6 +1,6 @@
 % =========================================================================
 %
-% function [Jc,para,dJ,J] = CoupledMRIObjFctn(yc, d, A, C, omega, m, varargin)
+% function [Jc,para,dJ,J] = DecoupledMRIObjFctn(yc, d, A, C, omega, m, flag, varargin)
 %
 % Fully coupled objective function for MRI motion correction problem
 %
@@ -19,23 +19,24 @@
 %      C  - 3 dimensional array of coil sensitivities 
 %  omega  - description of computational domain
 %      m  - spatial discretization of image
-%                       
+%   flag  - indicates which block of variable to return for the Jacobian
+%          
 %
 % Output:
 %   Jc    - function value
 %   para  - parameter for plots
 %   dJ    - gradient
-%   J     - Jacobian structure to approximate Hessian
+%   J     - Jacobian structure to approximate Hessian, varies depending on flag
 %
 % =========================================================================
 
-function [Jc,para,dJ,J] = CoupledMRIObjFctn(yc, d, A, C, omega, m, varargin)
+function [Jc,para,dJ,J] = DecoupledMRIObjFctn(yc, d, A, C, omega, m, flag, varargin)
 
 if nargin==0
     % Load data
     setupMoCoMRIProb;   
     
-   fctn = @(y) CoupledMRIObjFctn(y, d, A, C, omega, m,'alpha',0.0);
+   fctn = @(y) DecoupledMRIObjFctn(y, d, A, C, omega, m,0,'alpha',0.0);
    m = prod(m);
    p = numel(w0(:,2:end));
    yc = [x0(:); reshape(w0(:,2:end),[],1)];
@@ -132,25 +133,43 @@ para = struct('Jc',Jc,'Dc',Dc,'Sc',Sc,'omega',omega,'m',m,'Tc',xc,'Rc',Rc,'nSamp
 
 if not(doDerivative), return; end
 
-% Jacobian w.r.t complex image x
-Jx = @(x,flag) getAFCT(x,A,C,Tw,m,flag);
-
-% Jacobian w.r.t transformation w
-Jw = cell(nSamples,1);
-for k = 2:nSamples
-     Jw{k}(:,1) = reshape(A{k}*reshape(fft2(C.*reshape(dTx{k}(:,1),m)),[],nCoils),[],1);
-     Jw{k}(:,2) = reshape(A{k}*reshape(fft2(C.*reshape(dTx{k}(:,2),m)),[],nCoils),[],1);
-     Jw{k}(:,3) = reshape(A{k}*reshape(fft2(C.*reshape(dTx{k}(:,3),m)),[],nCoils),[],1);
+if (flag == 0 || flag == 1)
+    % Jacobian w.r.t complex image x
+    Jx  = @(x,flag) getAFCT(x,A,C,Tw,m,flag);
+    dJx = Jx(res,'transp')' + alpha*(Sx'*S);
 end
-Jw{1} = zeros(size(A{1},1)*nCoils,3);
-Jw = sparse(blkdiag(Jw{:}));
-Jw = Jw(:,4:end)/sqrt(prod(m));
 
-% Gradient
-dJ = [Jx(res,'transp')' + alpha*(Sx'*S), real(res'*Jw)];
+if (flag == 0 || flag == 2)
+    % Jacobian w.r.t transformation w
+    Jw = cell(nSamples,1);
+    for k = 2:nSamples
+        Jw{k}(:,1) = reshape(A{k}*reshape(fft2(C.*reshape(dTx{k}(:,1),m)),[],nCoils),[],1);
+        Jw{k}(:,2) = reshape(A{k}*reshape(fft2(C.*reshape(dTx{k}(:,2),m)),[],nCoils),[],1);
+        Jw{k}(:,3) = reshape(A{k}*reshape(fft2(C.*reshape(dTx{k}(:,3),m)),[],nCoils),[],1);
+    end
+    Jw{1} = zeros(size(A{1},1)*nCoils,3);
+    Jw = sparse(blkdiag(Jw{:}));
+    Jw = Jw(:,4:end)/sqrt(prod(m));
+    dJw = real(res'*Jw);
+end
 
-% Load everything into Jacobian structure
-J = struct('Jx', Jx, 'Jw', Jw, 'res', res, 'yc', yc, 'alpha', alpha, 'S', S, 'xdim', prod(m), 'wdim', length(yc(prod(m)+1:end)));
+if flag == 0
+   % Load everything into Jacobian structure
+   J = struct('Jx', Jx, 'Jw', Jw, 'res', res, 'yc', yc, 'alpha', alpha, 'S', S, 'xdim', prod(m), 'wdim', length(yc(prod(m)+1:end)));
+   dJ = [dJx, dJw];
+end
+
+if flag == 1
+    % Load everything into Jacobian structure
+    J = struct('Jx', Jx, 'res', res, 'yc', yc, 'alpha', alpha, 'S', S, 'xdim', prod(m), 'wdim', length(yc(prod(m)+1:end)));
+    dJ = dJx;
+end
+
+if flag == 2
+    % Load everything into Jacobian structure
+    J = struct('Jw', Jw, 'res', res, 'yc', yc, 'alpha', alpha, 'S', S, 'xdim', prod(m), 'wdim', length(yc(prod(m)+1:end)));
+    dJ = dJw;
+end
 
 end
 

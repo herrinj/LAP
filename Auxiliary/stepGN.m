@@ -336,7 +336,7 @@ switch solver
         dx      = zeros(xdim,1);
         
         % Solve for dx iteratively
-        [dx(not(activex)),~,~,iters] = lsqr(reg_Jx, rhs, solverTol,solverMaxIter);        
+        [dx(not(activex)),~,~,iters] = lsqr(reg_Jx, rhs, solverTol, solverMaxIter);        
         
         % Combine and return results
         dy = dx(:);    
@@ -426,22 +426,44 @@ switch solver
         solveInfo.alpha = alpha;
         solveInfo.iters = iters;
         solveInfo.dJ    = dJ; 
-        
+     
      case 'mbBCDchol'
+        %
+        %   Matrix-based, decoupled BCD Cholesky solver for Gauss-Newton 
+        %   step on motion variables using direct regularization with fixed 
+        %   alpha 
+        %
+        %   Note: Not implemented with constraints, but possible to do so
+        %
+        
+        % Load things from Hessian structure
+        Jw      = op.Jw; % Jacobian w.r.t. x, expected as a function handle
+        res     = op.res; % current residual
+      
+        % Solve
+        L = chol(Jw'*Jw,'lower');
+        rhs = -Jw'*res;    % real for MRI example
+        dw = real(L\(L'\(rhs))); % real for MRI example
+        
+        % Combine and return results
+        dy = dw(:);    
+        solveInfo = [];   
+        
+     case 'mbBCDls'
         %
         %   Matrix-based, decoupled BCD least-squares solver for Gauss-Newton 
         %   step on motion variables using direct regularization with fixed 
         %   alpha 
         %
         %   Note: Not implemented with constraints, but possible to do so
+        %
         
         % Load things from Hessian structure
         Jw      = op.Jw; % Jacobian w.r.t. x, expected as a function handle
         res     = op.res; % current residual
       
-        L = chol(Jw'*Jw,'lower');
-        rhs = -Jw'*res;
-        dw = L\(L'\(rhs));
+        % Solve
+        dw = -real(Jw\res);
         
         % Combine and return results
         dy = dw(:);    
