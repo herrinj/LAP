@@ -47,7 +47,7 @@ noise = abs(max(d))*noise/norm(noise(:));
 d = d + noise_level*noise;
 
 % Set up initial guess for w0
-w0 = zeros(size(wtrue)); %wtrue + 0.01*randn(size(wtrue)); % zeros(size(wtrue)); % Takes longer to converge with zero starting guess.
+w0 = zeros(size(wtrue)); %wtrue + 0.01*randn(size(wtrue)); % Takes longer to converge with zero starting guess.
 grid    = getCellCenteredGrid(omega,m);
 for k=1:nSamples
     [y{k},~] = trafo(w0(:,k),grid); % Transform points
