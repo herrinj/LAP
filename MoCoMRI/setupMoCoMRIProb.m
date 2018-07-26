@@ -18,7 +18,7 @@ if expfileExists , return;  end;
 
 load xGT.mat
 xtrue = flipud(double(xGT))';
-xtrue = xtrue/sum(abs(xtrue(:)));
+xtrue = xtrue/max(abs(xtrue(:)));
 C   = squeeze(double(S(:,:,:,:)));
 
 m   = size(xtrue);

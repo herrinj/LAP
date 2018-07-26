@@ -252,7 +252,7 @@ cond = zeros(2,1);
 
 while 1
     yt = yc + t*dy;
-    active = (yc <= lower_bound)|(yc >= upper_bound);
+    active = (yt <= lower_bound)|(yt >= upper_bound);
     if sum(active)>0
         yt = min(max(yt,lower_bound),upper_bound); % Only impose bounds on the image
     end

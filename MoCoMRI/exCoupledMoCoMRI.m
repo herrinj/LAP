@@ -20,8 +20,8 @@ setupMoCoMRIProb;
 % Set up params for all solvers
 tolJ = 1e-4;
 tolY = 1e0;
-tolG = 1e-3;
-maxIter     = 100;
+tolG = 1e-1;
+maxIter     = 200;
 iterSave    = true;
 
 %%
